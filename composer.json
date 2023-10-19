@@ -1,0 +1,28 @@
+{
+    "name": "lukasmundt/projectci",
+    "type": "lumos-module",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/",
+            "Database\\Factories\\": "database/factories/",
+            "Database\\Seeders\\": "database/seeders/",
+            "Lukasmundt\\ProjectCI\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Lukasmundt\\ProjectCI\\Providers\\ProjectCI"
+            ]
+        }
+    },
+    "authors": [
+        {
+            "name": "Lukas Mundt",
+            "email": "lukas@lukas-mundt.de"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {}
+}
