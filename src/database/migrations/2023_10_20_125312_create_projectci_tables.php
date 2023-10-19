@@ -38,15 +38,15 @@ return new class extends Migration {
             $table->unique(['strasse', 'hausnummer', 'PLZ', 'Stadtteil']);
         });
 
-        Schema::create('projectci_projektverknuepfung', function (Blueprint $table) {
-            $table->foreignUlid('projekt_id')
-                ->constrained('projectci_projekt', 'id')
-                ->cascadeOnUpdate()
-                ->cascadeDelete();
-            $table->ulidMorphs('projektverknuepfung', 'projektverknuepfung');
+        // Schema::create('projectci_projektverknuepfung', function (Blueprint $table) {
+        //     $table->foreignUlid('projekt_id')
+        //         ->constrained('projectci_projekt', 'id')
+        //         ->cascadeOnUpdate()
+        //         ->cascadeDelete();
+        //     $table->ulidMorphs('projektverknuepfung', 'projektverknuepfung');
 
-            $table->timestamps();
-        });
+        //     $table->timestamps();
+        // });
 
         Schema::create('projectci_person', function (Blueprint $table) {
             $table->ulid('id')->primary();
@@ -95,6 +95,8 @@ return new class extends Migration {
                 ->nullOnDelete();
 
             $table->timestamps();
+
+            $table->index(['telefonnummer','person_id'],'telefonnummer_person_id');
         });
 
         Schema::create('projectci_gruppe', function (Blueprint $table) {

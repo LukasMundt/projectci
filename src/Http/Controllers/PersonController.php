@@ -15,8 +15,6 @@ class PersonController extends Controller
 {
     public function create(Request $request): Response
     {
-        $tel = Telefonnummer::create(['telefonnummer' => "0178"]);
-        Person::find('01hd4dwjgwtscncrsqsmf10szq')->telefonnummern()->save($tel);
         return Inertia::render(
             'lukasmundt/projectci::Person/Create',
             [
