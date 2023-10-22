@@ -20,13 +20,14 @@ class Projekt extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'anrede',
-        'vorname',
-        'nachname',
-        'email',
         'strasse',
         'hausnummer',
+        'hausnummer_nummer',
+        'hausnummer_buchstabe',
         'plz',
         'stadt',
+        'stadtteil',
+        'coordinates_lat',
+        'coordinates_lon'
     ];
 }
