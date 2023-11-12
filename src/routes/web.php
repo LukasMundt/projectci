@@ -1,23 +1,22 @@
 <?php
 
-use App\Http\Middleware\Authenticate;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 use Lukasmundt\ProjectCI\Http\Controllers\PersonController;
 use Lukasmundt\ProjectCI\Http\Controllers\ProjektController;
 
-// Route::group(['middleware' => ['web', 'auth']], function () {
-//     Route::get('inspire', [AkquiseController::class, 'index'])->name('akquise.index');
-// });
 
-Route::middleware(['web','auth', 'verified'])->prefix("projectci")->group(function () {
+Route::middleware(['web', 'auth', 'verified'])->prefix("projectci")->group(function () {
     Route::get('', [ProjektController::class, 'index'])->name('akquise.index');
-    
 
-    Route::middleware([])->prefix("person")->group(function () {
+    // Route::get('person/create', [PersonController::class, 'create'])->name('projectci.person.create');
+    Route::middleware([])->prefix("/person")->group(function () {
         Route::get('/create', [PersonController::class, 'create'])->name('projectci.person.create');
         Route::post('', [PersonController::class, 'store'])->name('projectci.person.store');
-        Route::get('//{person}/edit', [PersonController::class, 'edit'])->name('projectci.person.edit');
-        // Route::patch('{transaction}/status', [TransactionController::class, 'status'])->name('finances.transactions.status');
+
+        Route::get("", [PersonController::class, "index"])->name("projectci.person.index");
+        Route::get("/{person}", [PersonController::class, "show"])->name("projectci.person.show");
+
+        Route::get('/{person}/edit', [PersonController::class, 'edit'])->name('projectci.person.edit');
+        Route::post('/{person}', [PersonController::class, 'update'])->name('projectci.person.update');
     });
 });

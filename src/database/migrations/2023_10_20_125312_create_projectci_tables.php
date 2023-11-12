@@ -15,7 +15,6 @@ return new class extends Migration {
             $table->string('strasse');
             $table->string('hausnummer');
             $table->integer('hausnummer_nummer');
-            $table->string('hausnummer_buchstabe')->nullable();
             $table->string('plz', 5);
             $table->string('stadtteil');
             $table->string('stadt');
@@ -48,16 +47,33 @@ return new class extends Migration {
         //     $table->timestamps();
         // });
 
+        Schema::create('projectci_gruppe', function (Blueprint $table) {
+            $table->ulid('id')->primary();
+            $table->string('strasse')->nullable();
+            $table->string('hausnummer')->nullable();
+            $table->string('plz', 5)->nullable();
+            $table->string('stadt')->nullable();
+            // $table->ulidMorphs('gruppierbar','gruppierbar'); //Ist z.B. Akquise...
+            $table->foreignUlid('created_by')
+                ->nullable()
+                ->constrained('users', 'id')
+                ->cascadeOnUpdate()
+                ->nullOnDelete();
+            $table->foreignUlid('updated_by')
+                ->nullable()
+                ->constrained('users', 'id')
+                ->cascadeOnUpdate()
+                ->nullOnDelete();
+
+            $table->timestamps();
+        });
+
         Schema::create('projectci_person', function (Blueprint $table) {
             $table->ulid('id')->primary();
             $table->string('anrede')->nullable();
             $table->string('titel')->nullable()->comment('z.B. akademischer Titel');
             $table->string('vorname')->nullable();
             $table->string('nachname')->nullable();
-            $table->string('strasse')->nullable();
-            $table->string('hausnummer')->nullable();
-            $table->string('plz', 5)->nullable();
-            $table->string('stadt')->nullable();
             $table->string('email')->nullable();
             $table->foreignUlid('created_by')
                 ->nullable()
@@ -69,6 +85,11 @@ return new class extends Migration {
                 ->constrained('users', 'id')
                 ->cascadeOnUpdate()
                 ->nullOnDelete();
+            $table->foreignUlid('gruppe_id')
+                ->nullable()
+                ->constrained('projectci_gruppe', 'id')
+                ->cascadeOnUpdate()
+                ->cascadeOnDelete();
 
             $table->timestamps();
             $table->softDeletes();
@@ -96,39 +117,23 @@ return new class extends Migration {
 
             $table->timestamps();
 
-            $table->index(['telefonnummer','person_id'],'telefonnummer_person_id');
+            $table->index(['telefonnummer', 'person_id'], 'telefonnummer_person_id');
         });
 
-        Schema::create('projectci_gruppe', function (Blueprint $table) {
-            $table->ulid('id')->primary();
-            $table->foreignUlid('created_by')
-                ->nullable()
-                ->constrained('users', 'id')
-                ->cascadeOnUpdate()
-                ->nullOnDelete();
-            $table->foreignUlid('updated_by')
-                ->nullable()
-                ->constrained('users', 'id')
-                ->cascadeOnUpdate()
-                ->nullOnDelete();
+        // Schema::create('projectci_gruppe_person', function (Blueprint $table) {
+        //     $table->foreignUlid('gruppe_id')
+        //         ->constrained('projectci_gruppe', 'id')
+        //         ->cascadeOnUpdate()
+        //         ->cascadeDelete();
+        //     $table->foreignUlid('person_id')
+        //         ->constrained('projectci_person', 'id')
+        //         ->cascadeOnUpdate()
+        //         ->cascadeOnDelete();
 
-            $table->timestamps();
-        });
+        //     $table->timestamps();
 
-        Schema::create('projectci_gruppe_person', function (Blueprint $table) {
-            $table->foreignUlid('gruppe_id')
-                ->constrained('projectci_gruppe', 'id')
-                ->cascadeOnUpdate()
-                ->cascadeDelete();
-            $table->foreignUlid('person_id')
-                ->constrained('projectci_person', 'id')
-                ->cascadeOnUpdate()
-                ->cascadeOnDelete();
-
-            $table->timestamps();
-
-            $table->index(['gruppe_id', 'person_id'],'gruppe_person');
-        });
+        //     $table->index(['gruppe_id', 'person_id'],'gruppe_person');
+        // });
 
         Schema::create('projectci_gruppeverknuepfung', function (Blueprint $table) {
             $table->foreignUlid('gruppe_id')
@@ -137,9 +142,10 @@ return new class extends Migration {
                 ->cascadeDelete();
             $table->ulidMorphs('gruppeverknuepfung', 'gruppeverknuepfung');
             $table->string('typ')->nullable();
-            $table->integer('prioritaet',false)->default(0);
+            $table->integer('prioritaet', false)->default(0);
 
             $table->timestamps();
+            $table->primary(['gruppe_id', 'gruppeverknuepfung_id', 'gruppeverknuepfung_type']);
         });
     }
 

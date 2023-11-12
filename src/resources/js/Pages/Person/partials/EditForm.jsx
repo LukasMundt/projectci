@@ -1,206 +1,226 @@
+import Card from "@/Components/Card";
 import InputError from "@/Components/Inputs/InputError";
 import InputLabel from "@/Components/Inputs/InputLabel";
-import PrimaryButton from "@/Components/PrimaryButton";
-import TextInput from "@/Components/Inputs/TextInput";
-import { useForm, usePage } from "@inertiajs/react";
-import { Transition } from "@headlessui/react";
-import CreatableSelect from "react-select/creatable";
+import ReactCreatableSelect from "@/Components/Inputs/ReactCreatableSelect";
 import ReactSelect from "@/Components/Inputs/ReactSelect";
-import { Card, FileInput, Select } from "flowbite-react";
-import { MapPinIcon, PhoneIcon, UserIcon } from "@heroicons/react/24/outline";
-import { EnvelopeIcon } from "@heroicons/react/24/solid";
+import TextInput from "@/Components/Inputs/TextInput";
+import PrimaryButton from "@/Components/PrimaryButton";
+import { Transition } from "@headlessui/react";
+import { ArrowDownIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
+import { useForm, usePage } from "@inertiajs/react";
+import { Button, Select } from "flowbite-react";
+import { useState } from "react";
 
-export default function EditForm({ status, className = "" }) {
-  const { user, person } = usePage().props;
+export default function EditForm({ className = "" }) {
+  const [showAdditionalNameInfos, setShowAdditionalNameInfos] = useState(false);
+  const { person, telefonnummernDefault, personId } = usePage().props;
 
   const { data, setData, post, errors, processing, recentlySuccessful } =
     useForm({
-      anrede: person.anrede,
-      vorname: "",
-      nachname: "",
-      telefonnummer: "",
-      email: "",
-      strasse: "",
-      hausnummer: "",
-      plz: "",
-      stadt: "",
+      anrede: person.anrede ?? "",
+      titel: person.titel ?? "",
+      vorname: person.vorname ?? "",
+      nachname: person.nachname ?? "",
+      email: person.email ?? "",
+      strasse: person.gruppe.strasse ?? "",
+      hausnummer: person.gruppe.hausnummer ?? "",
+      plz: person.gruppe.plz ?? "",
+      stadt: person.gruppe.stadt ?? "",
+      telefonnummern: telefonnummernDefault ?? [],
     });
 
   const submit = (e) => {
     e.preventDefault();
     console.log(data);
 
-    post(route("projectci.person.store"));
+    post(route("projectci.person.update", { person: personId }));
   };
-
   return (
     <section className={className}>
-      <form onSubmit={submit} className="mt-6 space-y-14">
-        {/* Name */}
-        <div className="space-y-4">
-          <div className="w-full flex justify-center">
-            <div className="rounded-full bg-emerald-400 p-4">
-              <UserIcon className="w-7" />
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 sm:p-8 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow sm:rounded-lg">
-            {/* Anrede */}
-            <div className="w-full col-span-1 md:col-span-2">
-              <InputLabel htmlFor="anrede" value="Anrede" />
-
-              <Select
-                id="anrede"
-                className="w-full"
-                onChange={(e) => {
-                  setData("anrede", e.target.value);
-                }}
-              >
-                <option value="">keine Anrede</option>
-                <option value="Frau">Frau</option>
-                <option value="Herr">Herr</option>
-              </Select>
-
-              <InputError className="mt-2" message={errors.anrede} />
-            </div>
+      <form onSubmit={submit} className="mt-6 space-y-6">
+        <Card directClassName="grid grid-cols-1 gap-3">
+          {/* Vor- und Nachname */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {/* Vorname */}
-            <div className="w-full">
+            <div>
               <InputLabel htmlFor="vorname" value="Vorname" />
-
               <TextInput
-                id="vorname"
                 className="w-full"
+                id="vorname"
+                value={data.vorname}
                 onChange={(e) => {
                   setData("vorname", e.target.value);
                 }}
               />
-
               <InputError className="mt-2" message={errors.vorname} />
             </div>
             {/* Nachname */}
-            <div className="w-full">
+            <div>
               <InputLabel htmlFor="nachname" value="Nachname" />
-
               <TextInput
-                id="nachname"
                 className="w-full"
+                id="nachname"
+                value={data.nachname}
                 onChange={(e) => {
                   setData("nachname", e.target.value);
                 }}
               />
-
               <InputError className="mt-2" message={errors.nachname} />
             </div>
           </div>
-        </div>
-        {/* Kontakt */}
-        <div className="space-y-4">
-          <div className="w-full flex justify-center">
-            <div className="rounded-full bg-emerald-400 p-4">
-              <PhoneIcon className="w-7" />
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 sm:p-8 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow sm:rounded-lg">
-            {/* Telefonnummer */}
-            <div className="w-full">
-              <InputLabel htmlFor="telefonnummer" value="Telefonnummer" />
 
-              <TextInput
-                id="telefonnummer"
-                className="w-full"
+          <div
+            className="flex gap-2 cursor-pointer"
+            onClick={(e) =>
+              setShowAdditionalNameInfos(!showAdditionalNameInfos)
+            }
+          >
+            {showAdditionalNameInfos ? (
+              <ArrowDownIcon className="w-5" />
+            ) : (
+              <ArrowRightIcon className="w-5" />
+            )}{" "}
+            Anrede und Titel anzeigen
+          </div>
+
+          {/* Anrede und Titel */}
+          <div
+            className={
+              "grid grid-cols-1 md:grid-cols-2 gap-3 " +
+              (!showAdditionalNameInfos ? "hidden" : "")
+            }
+          >
+            {/* Anrede */}
+            <div>
+              <InputLabel htmlFor="anrede" value="Anrede" />
+              <Select
+                id="anrede"
+                value={data.anrede}
                 onChange={(e) => {
-                  setData("telefonnummer", e.target.value);
+                  setData("anrede", e.target.value);
+                }}
+              >
+                <option value="Familie">Familie</option>
+                <option value="Frau">Frau</option>
+                <option value="Herr">Herr</option>
+                <option value="">keine Anrede</option>
+              </Select>
+              <InputError className="mt-2" message={errors.anrede} />
+            </div>
+            {/* Titel */}
+            <div>
+              <InputLabel htmlFor="titel" value="Titel" />
+              <TextInput
+                className="w-full"
+                id="titel"
+                value={data.titel}
+                onChange={(e) => {
+                  setData("titel", e.target.value);
                 }}
               />
-
-              <InputError className="mt-2" message={errors.telefonnummer} />
+              <InputError className="mt-2" message={errors.titel} />
             </div>
+          </div>
+        </Card>
+        {/* Kontakt */}
+        <Card directClassName="grid grid-cols-1 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {/* email */}
-            <div className="w-full">
+            <div>
               <InputLabel htmlFor="email" value="E-Mail" />
-
               <TextInput
-                // icon={EnvelopeIcon}
-                id="email"
                 className="w-full"
+                id="email"
+                value={data.email}
+                placeholder="max@example.com"
                 onChange={(e) => {
                   setData("email", e.target.value);
                 }}
               />
-
               <InputError className="mt-2" message={errors.email} />
             </div>
-          </div>
-        </div>
-        {/* Adresse */}
-        <div className="space-y-4">
-          <div className="w-full flex justify-center">
-            <div className="rounded-full bg-emerald-400 p-4">
-              <MapPinIcon className="w-7" />
+            {/* Telefonnummer */}
+            <div>
+              <InputLabel htmlFor="telefonnummern" value="Telefonnummern" />
+              <ReactCreatableSelect
+                id="telefonnummern"
+                // options={personen}
+                defaultValue={data.telefonnummern}
+                isMulti
+                isSearchable
+                isClearable
+                onChange={(choice) => setData("telefonnummern", choice)}
+              />
+              <InputError className="mt-2" message={errors.telefonnummern} />
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-3 p-4 sm:p-8 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow sm:rounded-lg">
-            {/* Strasse */}
-            <div className="w-full col-span-1 md:col-span-3 lg:col-span-5">
-              <InputLabel htmlFor="strasse" value="Straße" />
+        </Card>
 
+        <Card directClassName="grid grid-cols-1 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {/* strasse */}
+            <div>
+              <InputLabel htmlFor="strasse" value="Straße" />
               <TextInput
-                id="strasse"
                 className="w-full"
+                id="strasse"
+                value={data.strasse}
+                placeholder="Musterstraße"
                 onChange={(e) => {
                   setData("strasse", e.target.value);
                 }}
               />
-
               <InputError className="mt-2" message={errors.strasse} />
             </div>
             {/* hausnummer */}
-            <div className="w-full col-span-1">
+            <div>
               <InputLabel htmlFor="hausnummer" value="Hausnummer" />
-
               <TextInput
-                id="hausnummer"
                 className="w-full"
+                id="hausnummer"
+                value={data.hausnummer}
+                placeholder="1a"
                 onChange={(e) => {
                   setData("hausnummer", e.target.value);
                 }}
               />
-
               <InputError className="mt-2" message={errors.hausnummer} />
             </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {/* plz */}
-            <div className="w-full col-span-1 md:col-span-2 lg:col-span-3">
+            <div>
               <InputLabel htmlFor="plz" value="Postleitzahl" />
-
               <TextInput
-                id="plz"
                 className="w-full"
+                id="plz"
+                value={data.plz}
+                placeholder="12345"
                 onChange={(e) => {
                   setData("plz", e.target.value);
                 }}
               />
-
               <InputError className="mt-2" message={errors.plz} />
             </div>
             {/* stadt */}
-            <div className="w-full col-span-1 md:col-span-2 lg:col-span-3">
+            <div>
               <InputLabel htmlFor="stadt" value="Stadt" />
-
               <TextInput
-                id="stadt"
                 className="w-full"
-                value="Hamburg"
+                id="stadt"
+                value={data.stadt}
+                placeholder="Musterstadt"
                 onChange={(e) => {
                   setData("stadt", e.target.value);
                 }}
               />
-
               <InputError className="mt-2" message={errors.stadt} />
             </div>
           </div>
-        </div>
+        </Card>
 
         <div className="flex items-center gap-4">
-          <PrimaryButton disabled={processing}>Save</PrimaryButton>
+          <PrimaryButton disabled={processing}>Weiter</PrimaryButton>
 
           <Transition
             show={recentlySuccessful}

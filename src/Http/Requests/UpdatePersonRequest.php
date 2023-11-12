@@ -5,7 +5,7 @@ namespace Lukasmundt\ProjectCI\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class StorePersonRequest extends FormRequest
+class UpdatePersonRequest extends FormRequest
 {
     /**
      * Get the validation rules that apply to the request.
@@ -20,22 +20,12 @@ class StorePersonRequest extends FormRequest
             "vorname" => "nullable|string|max:255",
             "nachname" => "nullable|string|max:255",
             "email" => "nullable|string|max:255|email",
-            "strasse" => "required_with:hausnummer,plz,stadt|nullable|string|max:255",
-            "hausnummer" => "required_with:strasse,plz,stadt|nullable|string|max:255",
-            "plz" => ["required_with:strasse,hausnummer,stadt", "nullable", "string", "max:5"],
+            "strasse" => "nullable|string|max:255",
+            "hausnummer" => "nullable|string|max:255",
+            "plz" => ["nullable", "string", "max:5"],
             // nur zahlen hinzufügen
-            "stadt" => "required_with:strasse,hausnummer,plz|nullable|string|max:255",
+            "stadt" => "nullable|string|max:255",
             "telefonnummern.*.value" => ["sometimes", "string", "max:30"] // nur zahlen, bindestrich, plus und leerzeichen
-        ];
-    }
-
-    public function messages(): array
-    {
-        return [
-            '*.required_with' => 'Wenn eines der anderen Adress-Felder gefüllt ist müssen auch alle anderen befüllt sein.',
-            'email.email' => 'Bitte gib eine gültige E-Mail-Adresse ein.',
-            '*.string' => "Bitte gib eine Zeichenkette ein.",
-            '*.max' => "Bitte kürze deine Eingabe."
         ];
     }
 }

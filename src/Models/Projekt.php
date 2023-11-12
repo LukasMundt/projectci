@@ -30,4 +30,9 @@ class Projekt extends Model
         'coordinates_lat',
         'coordinates_lon'
     ];
+
+    public function getAddressAsString() : string
+    {
+        return $this->strasse.' '.$this->hausnummer;
+    }
 }
