@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Lukasmundt\ProjectCI\Http\Controllers\NotizController;
 use Lukasmundt\ProjectCI\Http\Controllers\PersonController;
 use Lukasmundt\ProjectCI\Http\Controllers\ProjektController;
 
@@ -18,5 +19,10 @@ Route::middleware(['web', 'auth', 'verified'])->prefix("projectci")->group(funct
 
         Route::get('/{person}/edit', [PersonController::class, 'edit'])->name('projectci.person.edit');
         Route::post('/{person}', [PersonController::class, 'update'])->name('projectci.person.update');
+    });
+
+    Route::middleware([])->prefix("/notiz")->group(function (){
+        // save
+        Route::post('', [NotizController::class, 'save'])->name('projectci.notiz.save');
     });
 });
