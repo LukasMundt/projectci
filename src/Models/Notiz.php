@@ -2,6 +2,7 @@
 
 namespace Lukasmundt\ProjectCI\Models;
 
+use App\Models\User;
 use EditorJS\EditorJS;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
@@ -20,10 +21,11 @@ class Notiz extends Model
 
     protected $fillable = ['inhalt', 'created_by', 'updated_by'];
 
-    protected $appends = ['blocks'];
+    protected $appends = [];
 
     protected $casts = [
-        'blocks' => 'array',
+        'inhalt' => 'encrypted',
+        // 'created_by' => User::class
     ];
 
     protected static function newFactory(): Factory
@@ -34,41 +36,5 @@ class Notiz extends Model
     public function notierbar(): MorphTo
     {
         return $this->morphTo('notierbar');
-    }
-
-    public function blocksAsArray(): array
-    {
-        $editor = new EditorJS(
-            $this->inhalt,
-            json_encode([
-                "tools" => [
-                    "header" => [
-                        "text" => [
-                            "type" => "string",
-                            "required" => true,
-                            "allowedTags" => "b,i,a[href]"
-                        ],
-                        "level" => [
-                            "type" => "int",
-                            "canBeOnly" => [1, 2, 3, 4, 5, 6]
-                        ]
-                    ],
-                    "paragraph" => [
-                        "text" => [
-                            "type" => "string",
-                            "allowedTags" => "i,b,u,a[href]"
-                        ]
-                    ],
-                ]
-            ])
-
-        );
-        return $editor->getBlocks();
-    }
-    protected function blocks(): Attribute
-    {
-        return new Attribute(
-            get: fn() => $this->blocksAsArray(),
-        );
     }
 }
