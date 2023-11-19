@@ -1,12 +1,13 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Lukasmundt\ProjectCI\Http\Controllers\KampagneController;
 use Lukasmundt\ProjectCI\Http\Controllers\NotizController;
 use Lukasmundt\ProjectCI\Http\Controllers\PersonController;
 use Lukasmundt\ProjectCI\Http\Controllers\ProjektController;
 
 
-Route::middleware(['web', 'auth', 'verified'])->prefix("projectci")->group(function () {
+Route::middleware(['web', 'auth', 'verified'])->prefix("projectci")->name('')->group(function () {
     Route::get('', [ProjektController::class, 'index'])->name('akquise.index');
 
     // Route::get('person/create', [PersonController::class, 'create'])->name('projectci.person.create');
@@ -21,8 +22,19 @@ Route::middleware(['web', 'auth', 'verified'])->prefix("projectci")->group(funct
         Route::post('/{person}', [PersonController::class, 'update'])->name('projectci.person.update');
     });
 
-    Route::middleware([])->prefix("/notiz")->group(function (){
+    Route::middleware([])->prefix("/notiz")->group(function () {
         // save
         Route::post('', [NotizController::class, 'save'])->name('projectci.notiz.save');
+    });
+
+    // Kampagne
+    Route::middleware([])->prefix("kampagne")->name('projectci.kampagne.')->group(function () {
+        // index
+        Route::get('', [KampagneController::class, 'index'])->name('index');
+
+        // neue Kampagne - Schritt für Schritt -> SBS
+        Route::get('/create/{id?}/{step?}', [KampagneController::class, 'stepByStepCreate'])->name('SBS-Create');
+        // stepByStep - set Properties (SBS = StepByStep)
+        Route::post('create/setProps/{id?}', [KampagneController::class, 'SBS_setProps'])->name('SBS-SetProps');
     });
 });
