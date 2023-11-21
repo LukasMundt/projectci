@@ -24,7 +24,7 @@ export default function D_PdfVorlage({}) {
     useForm({
       key: "vorlage",
       vorlage: null,
-      vorlageName: ""
+      bezeichnung: ""
     });
 
   const submit = (e) => {
@@ -43,7 +43,7 @@ export default function D_PdfVorlage({}) {
       //   </h2>
       // }
     >
-      <Head title="Passe die Kampagnen-Filter an" />
+      <Head title="Lade eine PDF-Vorlage hoch" />
 
       <div className="py-12">
         <div className="max-w-2xl mx-auto sm:px-6 lg:px-8 space-y-6">
@@ -71,18 +71,18 @@ export default function D_PdfVorlage({}) {
                   <InputError className="mt-2" message={errors.vorlage} />
                 </div>
                 <div>
-                  <InputLabel htmlFor="vorlageName" value="Bezeichnung" />
+                  <InputLabel htmlFor="bezeichnung" value="Bezeichnung" />
                   <TextInput
                     className="w-full"
                     required
-                    value={data.vorlageName}
-                    id="vorlageName"
+                    value={data.bezeichnung}
+                    id="bezeichnung"
                     // placeholder="Musterstadt"
                     onChange={(e) => {
-                      setData("vorlageName", e.target.value);
+                      setData("bezeichnung", e.target.value);
                     }}
                   />
-                  <InputError className="mt-2" message={errors.vorlageName} />
+                  <InputError className="mt-2" message={errors.bezeichnung} />
                 </div>
               </div>
 

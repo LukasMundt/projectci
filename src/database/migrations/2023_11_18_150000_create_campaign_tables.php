@@ -38,7 +38,8 @@ return new class extends Migration {
 
         Schema::create('projectci_pdf-vorlage', function (Blueprint $table) {
             $table->ulid('id')->primary();
-            $table->string('path');
+            $table->text('pfad');
+            $table->string('bezeichnung');
 
             $table->foreignUlid('created_by')
                 ->nullable()

@@ -20,7 +20,8 @@ class Kampagne extends Model
         'typ',
         'filter',
         'created_by',
-        'updated_by'
+        'updated_by',
+        'reichweite'
     ];
 
     // protected $casts = [

@@ -12,10 +12,11 @@ class PdfVorlage extends Model
     use HasUlids;
     use SoftDeletes;
 
-    protected $table = 'projectci_notiz';
+    protected $table = 'projectci_pdf-vorlage';
 
     protected $fillable = [
-        'path',
+        'bezeichnung',
+        'pfad',
         'created_by',
         'updated_by'
     ];

@@ -3,8 +3,10 @@
 namespace Lukasmundt\ProjectCI\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\File;
@@ -15,6 +17,7 @@ use Lukasmundt\ProjectCI\Http\Requests\StorePersonRequest;
 use Lukasmundt\ProjectCI\Http\Requests\UpdatePersonRequest;
 use Lukasmundt\ProjectCI\Models\Gruppe;
 use Lukasmundt\ProjectCI\Models\Kampagne;
+use Lukasmundt\ProjectCI\Models\PdfVorlage;
 use Lukasmundt\ProjectCI\Models\Person;
 use Lukasmundt\ProjectCI\Models\Projekt;
 use Lukasmundt\ProjectCI\Models\Telefonnummer;
@@ -25,6 +28,12 @@ class KampagneController extends Controller
     {
         return Inertia::render('lukasmundt/projectci::Kampagne/Index', [
             'kampagnen' => Kampagne::all(),
+        ]);
+    }
+
+    public function show(Request $request, Kampagne $kampagne){
+        return Inertia::render('lukasmundt/projectci::Kampagne/Show', [
+            'kampagne' => $kampagne,
         ]);
     }
 
@@ -39,25 +48,37 @@ class KampagneController extends Controller
         } else if ($step == "2" || $step == "2.1" || $step == "2.2") {
             $campaignCache = Cache::get($id);
 
-            $stadtteile = Projekt::orderBy('stadtteil')->get('stadtteil')->groupBy('stadtteil')->transform(function ($item, string $key) {
-                return count($item);
-            });
-            $stadtteile = $stadtteile->keys()->zip($stadtteile->values());
+            $stadtteile = [];
+            $postleitzahl = [];
+            $strassen = [];
+            switch ($step) {
+                case '2.2':
+                    $strassen = Projekt::whereIn('stadtteil', $campaignCache['filter']['stadtteil'])
+                        ->whereIn('plz', $campaignCache['filter']['plz'])
+                        ->orderBy('strasse')
+                        ->get('strasse')
+                        ->groupBy('strasse')
+                        ->transform(function ($item, string $key) {
+                            return count($item);
+                        });
+                    $strassen = $strassen->keys()->zip($strassen->values());
+                case '2.1':
+                    $postleitzahl = Projekt::whereIn('stadtteil', $campaignCache['filter']['stadtteil'])->orderBy('plz')->get('plz')->groupBy('plz')->transform(function ($item, string $key) {
+                        return count($item);
+                    });
+                    $postleitzahl = $postleitzahl->keys()->zip($postleitzahl->values());
+                default:
+                    $stadtteile = Projekt::orderBy('stadtteil')->get('stadtteil')->groupBy('stadtteil')->transform(function ($item, string $key) {
+                        return count($item);
+                    });
+                    $stadtteile = $stadtteile->keys()->zip($stadtteile->values());
+            }
 
-            $postleitzahl = Projekt::whereIn('stadtteil', $campaignCache['filter']['stadtteil'])->orderBy('plz')->get('plz')->groupBy('plz')->transform(function ($item, string $key) {
-                return count($item);
-            });
-            $postleitzahl = $postleitzahl->keys()->zip($postleitzahl->values());
 
-            $strassen = Projekt::whereIn('stadtteil', $campaignCache['filter']['stadtteil'])
-                ->whereIn('plz', $campaignCache['filter']['plz'])
-                ->orderBy('strasse')
-                ->get('strasse')
-                ->groupBy('strasse')
-                ->transform(function ($item, string $key) {
-                    return count($item);
-                });
-            $strassen = $strassen->keys()->zip($strassen->values());
+
+
+
+
 
             return Inertia::render(
                 'lukasmundt/projectci::Kampagne/C_Filter',
@@ -144,7 +165,7 @@ class KampagneController extends Controller
             $nextStep = "2.1";
             if ($validated['filter'] == "plz") {
                 $nextStep = "2.2";
-            } else if ($validated['filter'] == "straße") {
+            } else if ($validated['filter'] == "strasse") {
                 $nextStep = "3";
             }
             return to_route(
@@ -154,9 +175,34 @@ class KampagneController extends Controller
         } else if ($validated['key'] == 'vorlage') {
             $validated = $request->validate([
                 'key' => ['required'],
-                'vorlage' => ['required', File::types(['pdf'])->max(20 * 1024)]
+                'vorlage' => ['required', File::types(['pdf'])->max(20 * 1024)],
+                'bezeichnung' => ['required', 'string', 'max:255']
             ]);
-            Log::debug($validated);
+
+            // Vorlage wird gespeichert und DB-Eintrag erstellt
+            $fileName = Str::ulid();
+            Storage::putFileAs('pdfVorlagen', $request->file('vorlage'), $fileName . "." . $request->vorlage->extension());
+            $vorlage = PdfVorlage::create([
+                'pfad' => 'pdfVorlagen/' . $fileName . "." . $request->vorlage->extension(),
+                'bezeichnung' => $validated['bezeichnung'],
+                'created_by' => Auth::user()->id,
+                'updated_by' => Auth::user()->id,
+            ]);
+
+            // Kampagne wird in DB gespeichert
+            $data = Cache::get($id);
+            $vorlage->kampagnen()->save(
+                $kampagne = new Kampagne([
+                    'bezeichnung' => $data['name'],
+                    'typ' => $data['typ'],
+                    'status' => 0,
+                    'filter' => json_encode($data['filter']),
+                    'reichweite' => -1
+                ])
+            );
+            Cache::forget($id);
+            return to_route('projectci.kampagne.show', ['kampagne' => $kampagne->id]);
+
         }
     }
 }

@@ -29,12 +29,16 @@ Route::middleware(['web', 'auth', 'verified'])->prefix("projectci")->name('')->g
 
     // Kampagne
     Route::middleware([])->prefix("kampagne")->name('projectci.kampagne.')->group(function () {
-        // index
-        Route::get('', [KampagneController::class, 'index'])->name('index');
-
+        // Route::get('/create', [KampagneController::class, 'stepByStepCreate']);
         // neue Kampagne - Schritt für Schritt -> SBS
         Route::get('/create/{id?}/{step?}', [KampagneController::class, 'stepByStepCreate'])->name('SBS-Create');
         // stepByStep - set Properties (SBS = StepByStep)
         Route::post('create/setProps/{id?}', [KampagneController::class, 'SBS_setProps'])->name('SBS-SetProps');
+        // index
+        Route::get('', [KampagneController::class, 'index'])->name('index');
+        // show
+        Route::get('{kampagne}', [KampagneController::class, 'show'])->name('show');
+
+        
     });
 });
