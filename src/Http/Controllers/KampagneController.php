@@ -3,10 +3,12 @@
 namespace Lukasmundt\ProjectCI\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\File;
@@ -19,8 +21,10 @@ use Lukasmundt\ProjectCI\Models\Gruppe;
 use Lukasmundt\ProjectCI\Models\Kampagne;
 use Lukasmundt\ProjectCI\Models\PdfVorlage;
 use Lukasmundt\ProjectCI\Models\Person;
-use Lukasmundt\ProjectCI\Models\Projekt;
+// use Lukasmundt\ProjectCI\Models\Projekt;
+use Lukasmundt\Akquise\Models\Projekt;
 use Lukasmundt\ProjectCI\Models\Telefonnummer;
+use Lukasmundt\ProjectCI\Pdf\KampagnePdf;
 
 class KampagneController extends Controller
 {
@@ -31,10 +35,41 @@ class KampagneController extends Controller
         ]);
     }
 
-    public function show(Request $request, Kampagne $kampagne){
+    public function show(Request $request, Kampagne $kampagne)
+    {
+        $filter = $kampagne['filter'];
+
+        $projekte = Projekt::whereRelation('akquise', 'nicht_gewuenscht', false)
+            ->where(function (Builder $query) use ($filter) {
+                $query->whereIn('strasse', $filter['strasse'] ?? [], 'and', !isset($filter['strasse']) || count($filter['strasse']) == 0)
+                    ->whereIn('hausnummer', $filter['hausnummer'] ?? [], 'and', !isset($filter['hausnummer']) || count($filter['hausnummer']) == 0)
+                    ->whereIn('stadtteil', $filter['stadtteil'] ?? [], 'and', !isset($filter['stadtteil']) || count($filter['stadtteil']) == 0)
+                    ->whereIn('plz', $filter['plz'] ?? [], 'and', !isset($filter['plz']) || count($filter['plz']) == 0);
+            })
+            ->count();
+
+        $pfad = route('projectci.kampagne.vorlage',['kampagne' => $kampagne]);
+
         return Inertia::render('lukasmundt/projectci::Kampagne/Show', [
             'kampagne' => $kampagne,
+            'projekte' => $projekte,
+            'vorlagePfad' => $pfad,
         ]);
+    }
+
+    public function showVorlage(Request $request, Kampagne $kampagne)
+    {
+        return Storage::download($kampagne->vorlage->pfad, $kampagne->vorlage->bezeichnung, [
+            'Content-Disposition' => 'inline',
+        ]);
+    }
+
+    public function download(Request $request, Kampagne $kampagne)
+    {
+        $filename = 'kampagnen/serienbrief/' . $kampagne['id'] . ".pdf";
+        abort_if(!Storage::exists($filename), '404');
+
+        return Storage::download($filename, $kampagne['bezeichnung'] . '.pdf');
     }
 
     public function stepByStepCreate(Request $request, string $id = "0", string $step = "0")
@@ -53,7 +88,8 @@ class KampagneController extends Controller
             $strassen = [];
             switch ($step) {
                 case '2.2':
-                    $strassen = Projekt::whereIn('stadtteil', $campaignCache['filter']['stadtteil'])
+                    $strassen = Projekt::whereRelation('akquise', 'nicht_gewuenscht', false)
+                        ->whereIn('stadtteil', $campaignCache['filter']['stadtteil'])
                         ->whereIn('plz', $campaignCache['filter']['plz'])
                         ->orderBy('strasse')
                         ->get('strasse')
@@ -63,14 +99,23 @@ class KampagneController extends Controller
                         });
                     $strassen = $strassen->keys()->zip($strassen->values());
                 case '2.1':
-                    $postleitzahl = Projekt::whereIn('stadtteil', $campaignCache['filter']['stadtteil'])->orderBy('plz')->get('plz')->groupBy('plz')->transform(function ($item, string $key) {
-                        return count($item);
-                    });
+                    $postleitzahl = Projekt::whereRelation('akquise', 'nicht_gewuenscht', false)
+                        ->whereIn('stadtteil', $campaignCache['filter']['stadtteil'])
+                        ->orderBy('plz')
+                        ->get('plz')
+                        ->groupBy('plz')
+                        ->transform(function ($item, string $key) {
+                            return count($item);
+                        });
                     $postleitzahl = $postleitzahl->keys()->zip($postleitzahl->values());
                 default:
-                    $stadtteile = Projekt::orderBy('stadtteil')->get('stadtteil')->groupBy('stadtteil')->transform(function ($item, string $key) {
-                        return count($item);
-                    });
+                    $stadtteile = Projekt::whereRelation('akquise', 'nicht_gewuenscht', false)
+                        ->orderBy('stadtteil')
+                        ->get('stadtteil')
+                        ->groupBy('stadtteil')
+                        ->transform(function ($item, string $key) {
+                            return count($item);
+                        });
                     $stadtteile = $stadtteile->keys()->zip($stadtteile->values());
             }
 
@@ -191,18 +236,152 @@ class KampagneController extends Controller
 
             // Kampagne wird in DB gespeichert
             $data = Cache::get($id);
+            Log::debug($id);
             $vorlage->kampagnen()->save(
                 $kampagne = new Kampagne([
                     'bezeichnung' => $data['name'],
                     'typ' => $data['typ'],
                     'status' => 0,
-                    'filter' => json_encode($data['filter']),
-                    'reichweite' => -1
+                    'filter' => $data['filter'],
+                    'reichweite' => -1,
+                    'created_by' => Auth::user()->id,
+                    'updated_by' => Auth::user()->id,
                 ])
             );
             Cache::forget($id);
             return to_route('projectci.kampagne.show', ['kampagne' => $kampagne->id]);
 
+        } else {
+            abort(404);
         }
+    }
+
+
+    public function abschliessen(Request $request, Kampagne $kampagne)
+    {
+        $this->print($kampagne);
+    }
+
+    private function print(Kampagne $kampagne)
+    {
+        // Vorlage wird geladen
+        $kampagne->load('vorlage');
+        $filter = $kampagne['filter'];
+        Log::debug(gettype($filter));
+
+        // alle Projekte filtern
+        $projekte = Projekt::whereRelation('akquise', 'nicht_gewuenscht', false)
+            ->where(function (Builder $query) use ($filter) {
+                $query->whereIn('strasse', $filter['strasse'] ?? [], 'and', !isset($filter['strasse']) || count($filter['strasse']) == 0)
+                    ->whereIn('hausnummer', $filter['hausnummer'] ?? [], 'and', !isset($filter['hausnummer']) || count($filter['hausnummer']) == 0)
+                    ->whereIn('stadtteil', $filter['stadtteil'] ?? [], 'and', !isset($filter['stadtteil']) || count($filter['stadtteil']) == 0)
+                    ->whereIn('plz', $filter['plz'] ?? [], 'and', !isset($filter['plz']) || count($filter['plz']) == 0);
+            })
+            ->get();
+
+        $pdf = new KampagnePdf();
+        $pdf->SetTitle($kampagne['bezeichnung']);
+        $pdf->SetMargins(20, 20, 20);
+        $pdf->setFont('dejavusans');
+
+        // Template
+        $pdf->setSourceFile(Storage::readStream($kampagne['vorlage']['pfad']));
+        $tpl = $pdf->importPage(1);
+
+        // Alle Projekte werden behandelt
+        foreach ($projekte as $projekt) {
+            // Akquise laden
+            $projekt = $projekt->load(['akquise.gruppen.personen']);
+
+            // leeres Array empfaenger für dieses Projekterzeugt 
+            // -> mehrere Empfaenger möglich, jeder mit Adresse
+            $empfaenger = [];
+
+            // wenn Gruppen zugeordnet
+            if (count($projekt->akquise->gruppen) > 0) {
+                // hat gruppen-elemente
+                foreach ($projekt->akquise->gruppen as $gruppe) {
+                    // an nachbarn wird kein Brief geschickt
+                    if ($gruppe->pivot->typ == 'nachbar') {
+                        continue;
+                    }
+
+                    $adressat = '';
+
+                    // jede Person wird behandelt
+                    foreach ($gruppe->personen as $person) {
+                        if (!empty($adressat)) {
+                            $adrssat .= ' und ';
+                        }
+                        $result = $person['name'];
+                        if (!empty($person->nachname)) {
+                            $adressat .= $result;
+                        }
+
+                    }
+
+                    $dieserEmpfaenger = [
+                        strlen($adressat) > 30 ? 'die Eigentümer' : (empty($adressat) ? 'die Eigentümer' : $adressat),
+                    ];
+
+                    // wenn Gruppe eine Adresse hat
+                    if ($gruppe['strasse'] != null) {
+                        $dieserEmpfaenger[] = $gruppe->strasse . " " . $gruppe->hausnummer;
+                        $dieserEmpfaenger[] = $gruppe->plz . ' ' . $gruppe->stadt;
+                        $dieserEmpfaenger[] = 'Sehr geehrte Damen und Herren,';
+                    } else {
+                        $dieserEmpfaenger[] = $projekt->strasse . " " . $projekt->hausnummer;
+                        $dieserEmpfaenger[] = $projekt->plz . ' ' . $projekt->stadt;
+                        $dieserEmpfaenger[] = 'Sehr geehrte Damen und Herren,';
+                    }
+
+                    $empfaenger[] = $dieserEmpfaenger;
+                }
+
+            } else {
+                // keine Personen zugeordnet
+                $empfaenger[] = [
+                    'die Eigentümer',
+                    $projekt->strasse . " " . $projekt->hausnummer,
+                    $projekt->plz . ' ' . $projekt->stadt,
+                    'Sehr geehrte Damen und Herren,'
+                ];
+            }
+
+
+            // jede Gruppe zu Empfaenger hinzufügen -> mit Namen aller Personen bei zwei Personen -> als Methode des Models Gruppe implementieren -> Gruppenmitglieder müssen gleiche Adresse haben -> migration
+
+            foreach ($empfaenger as $adressat) {
+                $pdf->AddPage();
+
+                $pdf->useTemplate($tpl);
+                $pdf->setY(41);
+                $pdf->writeHtml(View::make(
+                    'projectci::pdf.serienbrief.adresse',
+                    [
+                        'absender' => '',
+                        'empfaenger' => $adressat[0],
+                        'strasseHausnummer' => $adressat[1],
+                        'plzStadt' => $adressat[2],
+                        'datum' => 'Hamburg, im Oktober 2023',
+                        'ansprache' => $adressat[3]
+                    ]
+                )->render());
+            }
+        }
+
+        Storage::put('kampagnen/serienbrief/' . $kampagne['id'] . ".pdf", $pdf->Output(null, 'S'));
+
+        // Kampagnen den Projekten zuordnen
+        $kampagne->akquise()->syncWithoutDetaching($projekte);
+
+        $kampagne->update(
+            [
+                'reichweite' => $projekte->count(),
+                'status' => 1,
+            ]
+        );
+
+        // return Storage::download('kampagnen/serienbrief/'.$kampagne['id'].".pdf");
     }
 }

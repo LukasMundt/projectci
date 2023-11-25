@@ -38,7 +38,10 @@ Route::middleware(['web', 'auth', 'verified'])->prefix("projectci")->name('')->g
         Route::get('', [KampagneController::class, 'index'])->name('index');
         // show
         Route::get('{kampagne}', [KampagneController::class, 'show'])->name('show');
-
-        
+        // abschliessen und Serienbrief drucken
+        Route::post('{kampagne}/abschliessen', [KampagneController::class, 'abschliessen'])->name('abschliessen');
+        // download ausgedruckten Serienbrief
+        Route::get('{kampagne}/download', [KampagneController::class, 'download'])->name('download');
+        Route::get('{kampagne}/vorlage', [KampagneController::class, 'showVorlage'])->name('vorlage');
     });
 });

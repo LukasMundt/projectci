@@ -10,7 +10,7 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('projectci_kampagne', function (Blueprint $table) {
+        Schema::hasTable('projectci_kampagne') ?? Schema::create('projectci_kampagne', function (Blueprint $table) {
             $table->ulid('id')->primary();
 
             $table->string('bezeichnung', 255);
@@ -36,7 +36,7 @@ return new class extends Migration {
             $table->softDeletes();
         });
 
-        Schema::create('projectci_pdf-vorlage', function (Blueprint $table) {
+        Schema::hasTable('projectci_pdf-vorlage') ?? Schema::create('projectci_pdf-vorlage', function (Blueprint $table) {
             $table->ulid('id')->primary();
             $table->text('pfad');
             $table->string('bezeichnung');
@@ -55,6 +55,17 @@ return new class extends Migration {
             $table->timestamps();
             $table->softDeletes();
         });
+
+        if (!Schema::hasTable('projectci_kampagne-bewerbbar')) {
+            Schema::create('projectci_kampagne-bewerbbar', function (Blueprint $table) {
+                $table->foreignUlid('kampagne_id')
+                    ->constrained('projectci_kampagne', 'id')
+                    ->cascadeOnUpdate()
+                    ->cascadeOnDelete();
+                $table->ulidMorphs('bewerbbar');
+            });
+        }
+
     }
 
     /**
