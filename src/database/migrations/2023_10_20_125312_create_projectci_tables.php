@@ -34,7 +34,7 @@ return new class extends Migration {
             $table->timestamps();
             $table->softDeletes();
 
-            $table->unique(['strasse', 'hausnummer', 'PLZ', 'Stadtteil'],'unique');
+            // $table->unique(['strasse', 'hausnummer', 'PLZ', 'Stadtteil'],'unique');
         });
 
         // Schema::create('projectci_projektverknuepfung', function (Blueprint $table) {
