@@ -13,7 +13,7 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Lukasmundt\\ProjectCI\\Providers\\ProjectCI",
+                "Lukasmundt\\ProjectCI\\Providers\\ProjectCIProvider",
                 "Elibyy\\TCPDF\\ServiceProvider"
             ]
         }
