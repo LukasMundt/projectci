@@ -6,7 +6,7 @@ use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
 use Inertia\Inertia;
 
-class ProjectciProvider extends ServiceProvider
+class ProjectCIProvider extends ServiceProvider
 {
     /**
      * Bootstrap services.

@@ -10,51 +10,54 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::hasTable('projectci_kampagne') ?? Schema::create('projectci_kampagne', function (Blueprint $table) {
-            $table->ulid('id')->primary();
+        if (!Schema::hasTable('projectci_kampagne')) {
+            Schema::create('projectci_kampagne', function (Blueprint $table) {
+                $table->ulid('id')->primary();
 
-            $table->string('bezeichnung', 255);
-            $table->tinyInteger('status');
-            $table->string('typ');
-            $table->text('filter');
-            $table->integer('reichweite');
+                $table->string('bezeichnung', 255);
+                $table->tinyInteger('status');
+                $table->string('typ');
+                $table->text('filter');
+                $table->integer('reichweite');
 
-            $table->foreignUlid('created_by')
-                ->nullable()
-                ->constrained('users', 'id')
-                ->cascadeOnUpdate()
-                ->nullOnDelete();
-            $table->foreignUlid('updated_by')
-                ->nullable()
-                ->constrained('users', 'id')
-                ->cascadeOnUpdate()
-                ->nullOnDelete();
+                $table->foreignUlid('created_by')
+                    ->nullable()
+                    ->constrained('users', 'id')
+                    ->cascadeOnUpdate()
+                    ->nullOnDelete();
+                $table->foreignUlid('updated_by')
+                    ->nullable()
+                    ->constrained('users', 'id')
+                    ->cascadeOnUpdate()
+                    ->nullOnDelete();
 
-            $table->ulidMorphs('vorlage');
+                $table->ulidMorphs('vorlage');
 
-            $table->timestamps();
-            $table->softDeletes();
-        });
+                $table->timestamps();
+                $table->softDeletes();
+            });
+        }
+        if (!Schema::hasTable('projectci_pdf-vorlage')) {
+            Schema::create('projectci_pdf-vorlage', function (Blueprint $table) {
+                $table->ulid('id')->primary();
+                $table->text('pfad');
+                $table->string('bezeichnung');
 
-        Schema::hasTable('projectci_pdf-vorlage') ?? Schema::create('projectci_pdf-vorlage', function (Blueprint $table) {
-            $table->ulid('id')->primary();
-            $table->text('pfad');
-            $table->string('bezeichnung');
+                $table->foreignUlid('created_by')
+                    ->nullable()
+                    ->constrained('users', 'id')
+                    ->cascadeOnUpdate()
+                    ->nullOnDelete();
+                $table->foreignUlid('updated_by')
+                    ->nullable()
+                    ->constrained('users', 'id')
+                    ->cascadeOnUpdate()
+                    ->nullOnDelete();
 
-            $table->foreignUlid('created_by')
-                ->nullable()
-                ->constrained('users', 'id')
-                ->cascadeOnUpdate()
-                ->nullOnDelete();
-            $table->foreignUlid('updated_by')
-                ->nullable()
-                ->constrained('users', 'id')
-                ->cascadeOnUpdate()
-                ->nullOnDelete();
-
-            $table->timestamps();
-            $table->softDeletes();
-        });
+                $table->timestamps();
+                $table->softDeletes();
+            });
+        }
 
         if (!Schema::hasTable('projectci_kampagne-bewerbbar')) {
             Schema::create('projectci_kampagne-bewerbbar', function (Blueprint $table) {

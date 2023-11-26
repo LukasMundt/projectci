@@ -13,7 +13,8 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Lukasmundt\\ProjectCI\\Providers\\ProjectCI"
+                "Lukasmundt\\ProjectCI\\Providers\\ProjectCI",
+                "Elibyy\\TCPDF\\ServiceProvider"
             ]
         }
     },
@@ -24,5 +25,7 @@
         }
     ],
     "minimum-stability": "stable",
-    "require": {}
+    "require": {
+        "monicahq/laravel-sabre": "^1.7"
+    }
 }
