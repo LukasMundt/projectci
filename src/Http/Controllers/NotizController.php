@@ -50,7 +50,7 @@ class NotizController extends Controller
 
         }
         // bestehende Notiz
-        {
+        else {
             $notiz = Notiz::where('id', $request->validated('id'))->first();
             $notiz->inhalt = json_encode($request->validated('notiz'));
             $notiz->updated_by = Auth::user()->id;
