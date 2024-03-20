@@ -5,6 +5,7 @@
 /public/storage
 /storage/*.key
 /vendor
+/vendor/composer
 /modules
 .env
 .env.backup

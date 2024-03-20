@@ -1,14 +1,14 @@
 <?php
 
-namespace Lukasmundt\ProjectCI\Database\Factories;
+namespace Database\Factories;
  
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Lukasmundt\ProjectCI\Models\Gruppe;
+use Lukasmundt\ProjectCI\Models\Person;
  
-class GruppeFactory extends Factory
+class PersonFactory extends Factory
 {
-    protected $model = Gruppe::class;
+    protected $model = Person::class;
 
     /**
      * Define the model's default state.
@@ -18,6 +18,7 @@ class GruppeFactory extends Factory
     public function definition(): array
     {
         return [
+            'anrede' => "",
             'created_by' => Auth::user()->id,
             'updated_by' => Auth::user()->id,
         ];

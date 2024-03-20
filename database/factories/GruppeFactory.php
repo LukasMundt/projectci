@@ -1,14 +1,14 @@
 <?php
 
-namespace Lukasmundt\ProjectCI\Database\Factories;
+namespace Database\Factories;
  
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Lukasmundt\ProjectCI\Models\Notiz;
+use Lukasmundt\ProjectCI\Models\Gruppe;
  
-class NotizFactory extends Factory
+class GruppeFactory extends Factory
 {
-    protected $model = Notiz::class;
+    protected $model = Gruppe::class;
 
     /**
      * Define the model's default state.
@@ -18,7 +18,6 @@ class NotizFactory extends Factory
     public function definition(): array
     {
         return [
-            'inhalt' => fake()->text(200),
             'created_by' => Auth::user()->id,
             'updated_by' => Auth::user()->id,
         ];
